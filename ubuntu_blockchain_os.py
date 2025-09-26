@@ -222,6 +222,7 @@ class UbuntuBlockchainOS:
             "read": SystemCallType.READ,
             "write": SystemCallType.WRITE,
             "exec": SystemCallType.EXECUTE,
+            "mkdir": SystemCallType.EXECUTE,  # mkdir is like exec
             "socket": SystemCallType.NETWORK,
             "mmap": SystemCallType.MEMORY,
             "fork": SystemCallType.PROCESS,

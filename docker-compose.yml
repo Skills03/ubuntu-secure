@@ -1,0 +1,275 @@
+version: '3.8'
+
+services:
+  # Core Blockchain Node
+  blockchain-node:
+    build:
+      context: .
+      dockerfile: docker/blockchain-node.Dockerfile
+    image: ubuntu-secure/blockchain-node:latest
+    ports:
+      - "30333:30333"  # P2P
+      - "9944:9944"    # RPC
+      - "9615:9615"    # Prometheus
+    environment:
+      - NODE_TYPE=validator
+      - CHAIN_ID=ubuntu-secure
+      - CONSENSUS_TYPE=grandpa
+    volumes:
+      - blockchain-data:/data
+      - ./config:/config:ro
+    networks:
+      - ubuntu-secure-net
+    restart: unless-stopped
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '2'
+          memory: 4G
+
+  # x86 Consensus Node
+  consensus-x86:
+    build:
+      context: .
+      dockerfile: docker/consensus-x86.Dockerfile
+    image: ubuntu-secure/consensus-x86:latest
+    ports:
+      - "9001:9001"
+    environment:
+      - ARCHITECTURE=x86_64
+      - NODE_ID=${NODE_ID:-node1}
+      - CONSENSUS_PORT=9001
+    volumes:
+      - ./mpc_compute.py:/app/mpc_compute.py:ro
+      - consensus-x86-data:/data
+    networks:
+      - ubuntu-secure-net
+    restart: unless-stopped
+    deploy:
+      placement:
+        constraints:
+          - node.platform.arch == x86_64
+
+  # ARM Consensus Node (for multi-arch)
+  consensus-arm:
+    build:
+      context: .
+      dockerfile: docker/consensus-arm.Dockerfile
+    image: ubuntu-secure/consensus-arm:latest
+    ports:
+      - "9002:9002"
+    environment:
+      - ARCHITECTURE=arm64
+      - NODE_ID=${NODE_ID:-node2}
+      - CONSENSUS_PORT=9002
+    volumes:
+      - ./mpc_compute.py:/app/mpc_compute.py:ro
+      - consensus-arm-data:/data
+    networks:
+      - ubuntu-secure-net
+    restart: unless-stopped
+    deploy:
+      placement:
+        constraints:
+          - node.platform.arch == aarch64
+
+  # IPFS Node for Distributed Storage
+  ipfs:
+    image: ipfs/go-ipfs:latest
+    ports:
+      - "5001:5001"  # API
+      - "8080:8080"  # Gateway
+      - "4001:4001"  # P2P
+    environment:
+      - IPFS_PROFILE=server
+    volumes:
+      - ipfs-data:/data/ipfs
+    networks:
+      - ubuntu-secure-net
+    restart: unless-stopped
+
+  # Zero-Knowledge Attestation Service
+  zk-attestation:
+    build:
+      context: .
+      dockerfile: docker/zk-attestation.Dockerfile
+    image: ubuntu-secure/zk-attestation:latest
+    ports:
+      - "8001:8001"
+    environment:
+      - ZK_PRIME_BITS=521
+      - ATTESTATION_INTERVAL=60
+    volumes:
+      - ./zk_attestation.py:/app/zk_attestation.py:ro
+      - zk-proofs:/data/proofs
+    networks:
+      - ubuntu-secure-net
+    restart: unless-stopped
+
+  # Network Isolation Manager
+  network-isolation:
+    build:
+      context: .
+      dockerfile: docker/network-isolation.Dockerfile
+    image: ubuntu-secure/network-isolation:latest
+    ports:
+      - "8002:8002"
+    environment:
+      - EVIL_TWIN_DETECTION=enabled
+      - CONSENSUS_THRESHOLD=2
+    volumes:
+      - ./network_isolation.py:/app/network_isolation.py:ro
+    networks:
+      - ubuntu-secure-net
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
+
+  # Emergency Revocation Service
+  emergency-revocation:
+    build:
+      context: .
+      dockerfile: docker/emergency-revocation.Dockerfile
+    image: ubuntu-secure/emergency-revocation:latest
+    ports:
+      - "8003:8003"
+    environment:
+      - REVOCATION_THRESHOLD=2
+      - DEAD_MANS_SWITCH=86400
+    volumes:
+      - ./emergency_revocation.py:/app/emergency_revocation.py:ro
+      - revocation-data:/data
+    networks:
+      - ubuntu-secure-net
+    restart: unless-stopped
+
+  # Web Interface (React App)
+  web-ui:
+    build:
+      context: .
+      dockerfile: docker/web-ui.Dockerfile
+    image: ubuntu-secure/web-ui:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://api:8000
+      - REACT_APP_WS_URL=ws://api:8000/ws
+    networks:
+      - ubuntu-secure-net
+    restart: unless-stopped
+
+  # API Gateway
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    image: ubuntu-secure/api:latest
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/ubuntu_secure
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - db
+      - redis
+    networks:
+      - ubuntu-secure-net
+    restart: unless-stopped
+
+  # PostgreSQL Database
+  db:
+    image: postgres:14-alpine
+    environment:
+      - POSTGRES_DB=ubuntu_secure
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - ubuntu-secure-net
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - ubuntu-secure-net
+    restart: unless-stopped
+
+  # Prometheus Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - ubuntu-secure-net
+    restart: unless-stopped
+
+  # Grafana Dashboard
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana-dashboards:/var/lib/grafana/dashboards:ro
+      - ./monitoring/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+    depends_on:
+      - prometheus
+    networks:
+      - ubuntu-secure-net
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - web-ui
+      - api
+    networks:
+      - ubuntu-secure-net
+    restart: unless-stopped
+
+networks:
+  ubuntu-secure-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  blockchain-data:
+  consensus-x86-data:
+  consensus-arm-data:
+  ipfs-data:
+  zk-proofs:
+  revocation-data:
+  postgres-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:
