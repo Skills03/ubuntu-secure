@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # Polkadot node with correct configuration for 8GB RAM
+  polkadot-node:
+    image: parity/polkadot:latest
+    container_name: ubuntu-blockchain
+    restart: unless-stopped
+    ports:
+      - "9944:9944"   # WebSocket RPC
+      - "9933:9933"   # HTTP RPC
+      - "30333:30333" # P2P
+    volumes:
+      - ./polkadot-data:/data
+    command: |
+      --dev
+      --tmp
+      --rpc-external
+      --rpc-cors=all
+      --rpc-methods=unsafe
+      --name=UbuntuSecureBlockchain
+      --prometheus-external
+      --telemetry-url='wss://telemetry.polkadot.io/submit/ 0'
+    mem_limit: 6g
+    memswap_limit: 8g
+    cpus: '2.0'
+    environment:
+      - RUST_LOG=info
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9933"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - ubuntu-network
+
+  # Web Interface with real blockchain connection
+  web-app:
+    image: node:18-alpine
+    container_name: ubuntu-web-app
+    working_dir: /app
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+    command: |
+      sh -c "
+        npm init -y &&
+        npm install @polkadot/api @polkadot/util express cors &&
+        node blockchain-server.js
+      "
+    depends_on:
+      polkadot-node:
+        condition: service_healthy
+    networks:
+      - ubuntu-network
+
+  # IPFS for decentralized storage
+  ipfs:
+    image: ipfs/go-ipfs:latest
+    container_name: ubuntu-ipfs
+    ports:
+      - "5001:5001"
+      - "4001:4001"
+      - "8090:8080"
+    volumes:
+      - ./ipfs-data:/data/ipfs
+    networks:
+      - ubuntu-network
+
+networks:
+  ubuntu-network:
+    driver: bridge
+
+volumes:
+  polkadot-data:
+  ipfs-data:

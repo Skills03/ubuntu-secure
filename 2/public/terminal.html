@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ubuntu Secure Terminal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a2e;
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .status {
+            display: inline-block;
+            background: #4ade80;
+            color: black;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            margin-left: 20px;
+            font-weight: bold;
+        }
+        #terminal-container {
+            flex: 1;
+            padding: 10px;
+            background: black;
+        }
+        #terminal {
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔒 Ubuntu Secure Terminal <span class="status">BLOCKCHAIN CONNECTED</span></h1>
+    </div>
+    <div id="terminal-container">
+        <div id="terminal"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+        const term = new Terminal({
+            cursorBlink: true,
+            fontSize: 14,
+            fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+            theme: {
+                background: '#000000',
+                foreground: '#00ff00',
+                cursor: '#00ff00'
+            }
+        });
+
+        const fitAddon = new FitAddon.FitAddon();
+        term.loadAddon(fitAddon);
+        term.open(document.getElementById('terminal'));
+        fitAddon.fit();
+
+        const socket = io();
+
+        socket.emit('create', {
+            cols: term.cols,
+            rows: term.rows
+        });
+
+        socket.on('output', (data) => {
+            term.write(data);
+        });
+
+        socket.on('created', (data) => {
+            console.log('Terminal created:', data.id);
+        });
+
+        term.onData((data) => {
+            socket.emit('input', data);
+        });
+
+        window.addEventListener('resize', () => {
+            fitAddon.fit();
+            socket.emit('resize', {
+                cols: term.cols,
+                rows: term.rows
+            });
+        });
+    </script>
+</body>
+</html>
