@@ -11,9 +11,10 @@ services:
       - "30333:30333" # P2P
     command: >
       --dev
-      --unsafe-rpc-external
-      --rpc-cors all
-      --name UbuntuSecure
+      --rpc-external
+      --rpc-cors=all
+      --rpc-methods=unsafe
+      --tmp
     volumes:
       - ./chain-data:/data
     restart: unless-stopped
