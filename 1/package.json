@@ -1,0 +1,19 @@
+{
+  "name": "ubuntu-secure-terminal",
+  "version": "1.0.0",
+  "description": "Terminal interface for Ubuntu Secure on Blockchain",
+  "main": "terminal-server.js",
+  "scripts": {
+    "start": "node terminal-server.js",
+    "dev": "nodemon terminal-server.js"
+  },
+  "dependencies": {
+    "@polkadot/api": "^16.4.8",
+    "express": "^4.18.2",
+    "node-pty": "^1.0.0",
+    "socket.io": "^4.6.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

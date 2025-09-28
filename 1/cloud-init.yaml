@@ -1,0 +1,28 @@
+#cloud-config
+package_update: true
+packages:
+  - python3-pip
+  - git
+  - nginx
+
+runcmd:
+  - git clone https://github.com/ubuntu-secure/blockchain-os.git /opt/ubuntu-blockchain
+  - cd /opt/ubuntu-blockchain
+  - pip3 install -r requirements.txt
+  - python3 ubuntu_blockchain_os.py &
+  - |
+    cat > /etc/nginx/sites-available/default << 'NGINX'
+    server {
+        listen 80;
+        server_name _;
+        location / {
+            proxy_pass http://localhost:8080;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $host;
+            proxy_cache_bypass $http_upgrade;
+        }
+    }
+    NGINX
+  - systemctl restart nginx
