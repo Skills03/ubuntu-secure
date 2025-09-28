@@ -1,0 +1,30 @@
+
+=== Starting Device Network ===
+[phone] Listening on port 8001
+[friend] Listening on port 8003
+Started 5 device nodes
+
+[yubikey] Listening on port 8002
+[cloud] Listening on port 8004
+[pi] Listening on port 8005
+=== Testing Device Connections ===
+[phone] Received boot request from 127.0.0.1
+[phone] Auto-approving (phone unlocked)
+✓ phone: Share received
+[yubikey] Received boot request from 127.0.0.1
+[yubikey] Waiting for physical touch...
+✓ yubikey: Share received
+[friend] Received boot request from 127.0.0.1
+[friend] Sending notification to friend...
+[friend] Friend approved the request!
+✓ friend: Share received
+[cloud] Received boot request from 127.0.0.1
+[cloud] Verifying request signature...
+✓ cloud: Share received
+[pi] Received boot request from 127.0.0.1
+[pi] Checking network location...
+✓ pi: Share received
+
+=== Stopping Device Network ===
+All device nodes stopped
+

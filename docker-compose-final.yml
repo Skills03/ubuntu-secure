@@ -1,0 +1,31 @@
+version: '3'
+
+services:
+  # Single Substrate dev node (simpler is better per methodology)
+  substrate:
+    image: parity/polkadot:latest
+    container_name: ubuntu-substrate
+    ports:
+      - "9944:9944"   # WebSocket RPC
+      - "9933:9933"   # HTTP RPC
+      - "30333:30333" # P2P
+    command: >
+      --dev
+      --rpc-external
+      --rpc-cors=all
+      --rpc-methods=unsafe
+      --tmp
+    volumes:
+      - ./chain-data:/data
+    restart: unless-stopped
+
+  # Simple web interface
+  web:
+    image: nginx:alpine
+    container_name: ubuntu-web
+    ports:
+      - "8080:80"
+    volumes:
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+    depends_on:
+      - substrate
