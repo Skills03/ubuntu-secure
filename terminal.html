@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ubuntu Secure Terminal</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            font-family: 'Courier New', monospace;
+            color: #00ff00;
+            overflow: hidden;
+        }
+        .terminal-container {
+            width: 100vw;
+            height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .terminal {
+            width: 100%;
+            height: 100%;
+            background: #000;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            border: 2px solid #00ff00;
+            padding: 15px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .prompt {
+            color: #00ff00;
+        }
+        .output {
+            color: #ffffff;
+            margin: 5px 0;
+        }
+        .error {
+            color: #ff4444;
+        }
+        .success {
+            color: #44ff44;
+        }
+        .header {
+            color: #00ffff;
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #00ff00;
+            padding-bottom: 10px;
+        }
+        input {
+            background: transparent;
+            border: none;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            outline: none;
+            width: 80%;
+        }
+    </style>
+</head>
+<body>
+    <div class="terminal-container">
+        <div class="terminal" id="terminal">
+            <div class="header">
+🔗 UBUNTU SECURE BLOCKCHAIN OS - TERMINAL ACCESS 🔗
+================================================================================
+Security Level: Nation-State Resistant | Consensus: 3 of 5 Active
+================================================================================
+            </div>
+            <div class="output">
+Welcome to Ubuntu Secure Blockchain OS Terminal
+
+This is a simulated terminal interface showing how the system operates.
+In a real deployment, this would connect to the consensus network.
+
+Available commands:
+- help          Show available commands
+- status        Show consensus status
+- boot          Trigger secure boot
+- nodes         List consensus nodes
+- attacks       Show defeated attacks
+- exit          Close terminal
+
+Type 'help' for more information.
+            </div>
+            <div class="prompt">
+ubuntu-secure@blockchain:~$ <input type="text" id="commandInput" autofocus>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const terminal = document.getElementById('terminal');
+        const input = document.getElementById('commandInput');
+
+        const commands = {
+            help: `Available commands:
+- status: Show system consensus status
+- boot: Demonstrate secure boot process
+- nodes: List all consensus nodes
+- attacks: Show defeated attack vectors
+- blockchain: Show blockchain state
+- clear: Clear terminal
+- exit: Close terminal`,
+
+            status: `🔗 CONSENSUS STATUS
+✓ Nodes: 5 active
+✓ Threshold: 3 of 5 required
+✓ Laptop: COMPROMISED (excluded from consensus)
+✓ Phone: TRUSTED (voting active)
+✓ Pi: TRUSTED (voting active)
+✓ Cloud: TRUSTED (voting active)
+✓ Friend: TRUSTED (voting active)
+✓ Security: UNBREAKABLE`,
+
+            boot: `🚀 SECURE BOOT SEQUENCE
+[1/5] Collecting threshold key shares...
+[2/5] Phone device: APPROVED
+[3/5] Pi device: APPROVED
+[4/5] Cloud device: APPROVED
+[5/5] Friend device: APPROVED
+✓ Consensus reached (4/5 votes)
+✓ Ubuntu kernel loaded from blockchain
+✓ System ready - hardware attacks ineffective`,
+
+            nodes: `📡 CONSENSUS NODES
+1. laptop    | x86_64 | COMPROMISED | Trust: 0.5
+2. phone     | ARM    | TRUSTED     | Trust: 0.8
+3. pi        | RISC-V | TRUSTED     | Trust: 0.9
+4. cloud     | x86_64 | TRUSTED     | Trust: 0.7
+5. friend    | ARM    | TRUSTED     | Trust: 0.6`,
+
+            attacks: `🛡️ DEFEATED ATTACK VECTORS
+✓ Intel ME Tampering - Filesystem on blockchain, not local
+✓ UEFI Rootkit - Boot from blockchain, not UEFI
+✓ Evil Twin WiFi - Multi-path consensus required
+✓ File Tampering - Immutable blockchain storage
+✓ Timestamp Manipulation - Distributed time sources
+✓ Hardware Backdoors - Multi-architecture consensus`,
+
+            blockchain: `⛓️ BLOCKCHAIN STATE
+Height: 1337
+Transactions: 50,247
+Latest Block: 0x00003a5f8d9c...
+State Root: 0x7f2a8e4c...
+Consensus: ACTIVE
+Nodes: 5 (4 trusted, 1 compromised)`,
+
+            clear: '',
+            exit: 'Terminal session ended. Consensus continues...'
+        };
+
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const command = input.value.trim().toLowerCase();
+
+                // Add command to terminal
+                const commandDiv = document.createElement('div');
+                commandDiv.className = 'prompt';
+                commandDiv.textContent = `ubuntu-secure@blockchain:~$ ${input.value}`;
+                terminal.appendChild(commandDiv);
+
+                // Add output
+                const outputDiv = document.createElement('div');
+                outputDiv.className = 'output';
+
+                if (command === 'clear') {
+                    terminal.innerHTML = `
+                        <div class="header">
+🔗 UBUNTU SECURE BLOCKCHAIN OS - TERMINAL ACCESS 🔗
+================================================================================
+Security Level: Nation-State Resistant | Consensus: 3 of 5 Active
+================================================================================
+                        </div>
+                    `;
+                } else if (commands[command]) {
+                    outputDiv.innerHTML = commands[command];
+                    terminal.appendChild(outputDiv);
+                } else if (command === '') {
+                    // Empty command, just show new prompt
+                } else {
+                    outputDiv.className = 'output error';
+                    outputDiv.textContent = `Command not found: ${command}. Type 'help' for available commands.`;
+                    terminal.appendChild(outputDiv);
+                }
+
+                // Add new prompt
+                if (command !== 'exit') {
+                    const newPrompt = document.createElement('div');
+                    newPrompt.className = 'prompt';
+                    newPrompt.innerHTML = 'ubuntu-secure@blockchain:~$ <input type="text" id="commandInput" autofocus>';
+                    terminal.appendChild(newPrompt);
+
+                    // Focus new input
+                    const newInput = newPrompt.querySelector('input');
+                    newInput.addEventListener('keypress', arguments.callee);
+                    newInput.focus();
+
+                    // Remove old input listener
+                    input.removeEventListener('keypress', arguments.callee);
+                }
+
+                // Clear input
+                input.value = '';
+
+                // Scroll to bottom
+                terminal.scrollTop = terminal.scrollHeight;
+            }
+        });
+    </script>
+</body>
+</html>

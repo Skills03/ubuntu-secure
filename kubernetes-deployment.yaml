@@ -1,0 +1,635 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ubuntu-blockchain
+
+---
+# Blockchain StatefulSet for persistent data
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: blockchain-node
+  namespace: ubuntu-blockchain
+spec:
+  serviceName: blockchain-service
+  replicas: 21  # 21 validator nodes for production
+  selector:
+    matchLabels:
+      app: blockchain-node
+  template:
+    metadata:
+      labels:
+        app: blockchain-node
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - blockchain-node
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: blockchain
+        image: ubuntu-secure/blockchain-node:latest
+        ports:
+        - containerPort: 30333
+          name: p2p
+        - containerPort: 9944
+          name: rpc
+        - containerPort: 9615
+          name: metrics
+        env:
+        - name: NODE_TYPE
+          value: "validator"
+        - name: CHAIN_ID
+          value: "ubuntu-secure-mainnet"
+        resources:
+          requests:
+            memory: "8Gi"
+            cpu: "2"
+          limits:
+            memory: "16Gi"
+            cpu: "4"
+        volumeMounts:
+        - name: blockchain-data
+          mountPath: /data
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 9944
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 9944
+          initialDelaySeconds: 30
+          periodSeconds: 5
+  volumeClaimTemplates:
+  - metadata:
+      name: blockchain-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "fast-ssd"
+      resources:
+        requests:
+          storage: 2Ti
+
+---
+# Consensus Nodes Deployment (Multi-Architecture)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consensus-x86
+  namespace: ubuntu-blockchain
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: consensus-x86
+  template:
+    metadata:
+      labels:
+        app: consensus-x86
+        architecture: x86_64
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      containers:
+      - name: consensus
+        image: ubuntu-secure/consensus-x86:latest
+        ports:
+        - containerPort: 9001
+        env:
+        - name: ARCHITECTURE
+          value: "x86_64"
+        - name: NODE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "1"
+          limits:
+            memory: "8Gi"
+            cpu: "2"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consensus-arm
+  namespace: ubuntu-blockchain
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: consensus-arm
+  template:
+    metadata:
+      labels:
+        app: consensus-arm
+        architecture: arm64
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      containers:
+      - name: consensus
+        image: ubuntu-secure/consensus-arm:latest
+        ports:
+        - containerPort: 9002
+        env:
+        - name: ARCHITECTURE
+          value: "arm64"
+        - name: NODE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "1"
+          limits:
+            memory: "8Gi"
+            cpu: "2"
+
+---
+# IPFS DaemonSet for distributed storage
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: ipfs
+  namespace: ubuntu-blockchain
+spec:
+  selector:
+    matchLabels:
+      app: ipfs
+  template:
+    metadata:
+      labels:
+        app: ipfs
+    spec:
+      containers:
+      - name: ipfs
+        image: ipfs/go-ipfs:latest
+        ports:
+        - containerPort: 5001
+          name: api
+        - containerPort: 8080
+          name: gateway
+        - containerPort: 4001
+          name: p2p
+        env:
+        - name: IPFS_PROFILE
+          value: "server"
+        volumeMounts:
+        - name: ipfs-data
+          mountPath: /data/ipfs
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "1"
+      volumes:
+      - name: ipfs-data
+        hostPath:
+          path: /var/ipfs
+
+---
+# API Gateway Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: ubuntu-blockchain
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+      - name: api
+        image: ubuntu-secure/api:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: url
+        - name: REDIS_URL
+          value: "redis://redis-service:6379"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: api-secret
+              key: jwt-secret
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1"
+          limits:
+            memory: "4Gi"
+            cpu: "2"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 20
+          periodSeconds: 5
+
+---
+# Web UI Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-ui
+  namespace: ubuntu-blockchain
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web-ui
+  template:
+    metadata:
+      labels:
+        app: web-ui
+    spec:
+      containers:
+      - name: web
+        image: ubuntu-secure/web-ui:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: REACT_APP_API_URL
+          value: "https://api.ubuntu-blockchain.org"
+        - name: REACT_APP_WS_URL
+          value: "wss://api.ubuntu-blockchain.org/ws"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+
+---
+# PostgreSQL StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: ubuntu-blockchain
+spec:
+  serviceName: postgres-service
+  replicas: 3
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:14
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: ubuntu_secure
+        - name: POSTGRES_USER
+          value: postgres
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: password
+        - name: POSTGRES_REPLICATION_MODE
+          value: master
+        - name: POSTGRES_REPLICATION_USER
+          value: replicator
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "2"
+          limits:
+            memory: "8Gi"
+            cpu: "4"
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "fast-ssd"
+      resources:
+        requests:
+          storage: 100Gi
+
+---
+# Redis Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: ubuntu-blockchain
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        command: ["redis-server", "--appendonly", "yes"]
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "1"
+      volumes:
+      - name: redis-data
+        emptyDir: {}
+
+---
+# Services
+apiVersion: v1
+kind: Service
+metadata:
+  name: blockchain-service
+  namespace: ubuntu-blockchain
+spec:
+  selector:
+    app: blockchain-node
+  ports:
+  - name: p2p
+    port: 30333
+  - name: rpc
+    port: 9944
+  - name: metrics
+    port: 9615
+  clusterIP: None  # Headless service for StatefulSet
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: consensus-service
+  namespace: ubuntu-blockchain
+spec:
+  selector:
+    app: consensus-x86
+  ports:
+  - port: 9001
+    targetPort: 9001
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-service
+  namespace: ubuntu-blockchain
+spec:
+  selector:
+    app: api-gateway
+  ports:
+  - port: 8000
+    targetPort: 8000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-service
+  namespace: ubuntu-blockchain
+spec:
+  selector:
+    app: web-ui
+  ports:
+  - port: 3000
+    targetPort: 3000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: ubuntu-blockchain
+spec:
+  selector:
+    app: postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+  clusterIP: None
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: ubuntu-blockchain
+spec:
+  selector:
+    app: redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+
+---
+# Ingress for external access
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ubuntu-blockchain-ingress
+  namespace: ubuntu-blockchain
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/websocket-services: "api-service"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+spec:
+  tls:
+  - hosts:
+    - ubuntu-blockchain.org
+    - api.ubuntu-blockchain.org
+    - consensus.ubuntu-blockchain.org
+    - ipfs.ubuntu-blockchain.org
+    secretName: ubuntu-blockchain-tls
+  rules:
+  - host: ubuntu-blockchain.org
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: web-service
+            port:
+              number: 3000
+  - host: api.ubuntu-blockchain.org
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 8000
+  - host: consensus.ubuntu-blockchain.org
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: consensus-service
+            port:
+              number: 9001
+
+---
+# HorizontalPodAutoscaler for API
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: api-hpa
+  namespace: ubuntu-blockchain
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api-gateway
+  minReplicas: 5
+  maxReplicas: 50
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+---
+# HorizontalPodAutoscaler for Web UI
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: web-hpa
+  namespace: ubuntu-blockchain
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: web-ui
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+
+---
+# NetworkPolicy for security
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: blockchain-network-policy
+  namespace: ubuntu-blockchain
+spec:
+  podSelector:
+    matchLabels:
+      app: blockchain-node
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: consensus-x86
+    - podSelector:
+        matchLabels:
+          app: consensus-arm
+    - podSelector:
+        matchLabels:
+          app: api-gateway
+    ports:
+    - protocol: TCP
+      port: 9944
+  egress:
+  - to:
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 30333  # P2P
+    - protocol: TCP
+      port: 443     # External HTTPS
+
+---
+# Secrets
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-secret
+  namespace: ubuntu-blockchain
+type: Opaque
+data:
+  password: cGFzc3dvcmQxMjM=  # base64 encoded
+  url: cG9zdGdyZXNxbDovL3Bvc3RncmVzOnBhc3N3b3JkMTIzQHBvc3RncmVzLXNlcnZpY2U6NTQzMi91YnVudHVfc2VjdXJl
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: api-secret
+  namespace: ubuntu-blockchain
+type: Opaque
+data:
+  jwt-secret: c3VwZXJfc2VjcmV0X2p3dF9rZXlfMTIzNDU2Nzg=  # base64 encoded

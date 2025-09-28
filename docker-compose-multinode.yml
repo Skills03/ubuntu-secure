@@ -1,0 +1,242 @@
+version: '3.8'
+
+# Ubuntu Secure: Phase 3 - Multi-Node Network
+# 5 blockchain nodes representing different devices with different architectures
+# Each node votes on system call transactions
+
+services:
+  # Node 1: Laptop (x86 - potentially compromised)
+  laptop-node:
+    container_name: ubuntu-secure-laptop
+    image: ubuntu:24.04
+    hostname: laptop-x86
+    networks:
+      ubuntu_secure_net:
+        ipv4_address: 172.28.1.1
+    environment:
+      - NODE_TYPE=Laptop
+      - NODE_ARCH=x86_64
+      - NODE_ID=1
+      - P2P_PORT=30333
+      - RPC_PORT=9944
+      - WS_PORT=9945
+      - CONSENSUS_THRESHOLD=3
+      - TOTAL_NODES=5
+    volumes:
+      - ./ubuntu-blockchain-node:/app
+      - laptop-chain-data:/chain-data
+    ports:
+      - "9944:9944"  # RPC for system call interceptor
+      - "30333:30333" # P2P
+    command: >
+      bash -c "
+      echo '[Ubuntu Secure] Laptop node starting (x86 - viewport)...' &&
+      echo 'Node Role: Primary user interface' &&
+      echo 'Trust Level: COMPROMISED (assumed)' &&
+      echo 'Vote Weight: 1/5' &&
+      /app/ubuntu-secure-node
+        --base-path /chain-data
+        --chain local
+        --node-key 0000000000000000000000000000000000000000000000000000000000000001
+        --port 30333
+        --rpc-port 9944
+        --rpc-cors all
+        --name 'Laptop-x86'
+        --validator
+      "
+
+  # Node 2: Phone (ARM architecture)
+  phone-node:
+    container_name: ubuntu-secure-phone
+    image: ubuntu:24.04
+    hostname: phone-arm
+    networks:
+      ubuntu_secure_net:
+        ipv4_address: 172.28.1.2
+    environment:
+      - NODE_TYPE=Phone
+      - NODE_ARCH=ARM64
+      - NODE_ID=2
+      - P2P_PORT=30334
+      - RPC_PORT=9946
+      - WS_PORT=9947
+      - SECURITY_POLICY=strict
+    volumes:
+      - ./ubuntu-blockchain-node:/app
+      - phone-chain-data:/chain-data
+    ports:
+      - "30334:30334"
+    command: >
+      bash -c "
+      echo '[Ubuntu Secure] Phone node starting (ARM)...' &&
+      echo 'Node Role: Mobile security validator' &&
+      echo 'Trust Level: 80%' &&
+      echo 'Vote Weight: 1/5' &&
+      /app/ubuntu-secure-node
+        --base-path /chain-data
+        --chain local
+        --node-key 0000000000000000000000000000000000000000000000000000000000000002
+        --port 30334
+        --bootnodes /ip4/172.28.1.1/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp
+        --name 'Phone-ARM'
+        --validator
+      "
+
+  # Node 3: Raspberry Pi (RISC-V architecture)
+  pi-node:
+    container_name: ubuntu-secure-pi
+    image: ubuntu:24.04
+    hostname: pi-riscv
+    networks:
+      ubuntu_secure_net:
+        ipv4_address: 172.28.1.3
+    environment:
+      - NODE_TYPE=Pi
+      - NODE_ARCH=RISCV64
+      - NODE_ID=3
+      - P2P_PORT=30335
+      - RPC_PORT=9948
+      - SECURITY_POLICY=conservative
+    volumes:
+      - ./ubuntu-blockchain-node:/app
+      - pi-chain-data:/chain-data
+    ports:
+      - "30335:30335"
+    command: >
+      bash -c "
+      echo '[Ubuntu Secure] Raspberry Pi node starting (RISC-V)...' &&
+      echo 'Node Role: Conservative security validator' &&
+      echo 'Trust Level: 90%' &&
+      echo 'Vote Weight: 1/5' &&
+      /app/ubuntu-secure-node
+        --base-path /chain-data
+        --chain local
+        --node-key 0000000000000000000000000000000000000000000000000000000000000003
+        --port 30335
+        --bootnodes /ip4/172.28.1.1/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp
+        --name 'Pi-RISCV'
+        --validator
+      "
+
+  # Node 4: Cloud Instance (x86)
+  cloud-node:
+    container_name: ubuntu-secure-cloud
+    image: ubuntu:24.04
+    hostname: cloud-x86
+    networks:
+      ubuntu_secure_net:
+        ipv4_address: 172.28.1.4
+    environment:
+      - NODE_TYPE=Cloud
+      - NODE_ARCH=x86_64
+      - NODE_ID=4
+      - P2P_PORT=30336
+      - RPC_PORT=9950
+      - SECURITY_POLICY=policy_based
+    volumes:
+      - ./ubuntu-blockchain-node:/app
+      - cloud-chain-data:/chain-data
+    ports:
+      - "30336:30336"
+    command: >
+      bash -c "
+      echo '[Ubuntu Secure] Cloud node starting (x86)...' &&
+      echo 'Node Role: Policy-based validator' &&
+      echo 'Trust Level: 70%' &&
+      echo 'Vote Weight: 1/5' &&
+      /app/ubuntu-secure-node
+        --base-path /chain-data
+        --chain local
+        --node-key 0000000000000000000000000000000000000000000000000000000000000004
+        --port 30336
+        --bootnodes /ip4/172.28.1.1/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp
+        --name 'Cloud-x86'
+        --validator
+      "
+
+  # Node 5: Friend's Device (Variable architecture)
+  friend-node:
+    container_name: ubuntu-secure-friend
+    image: ubuntu:24.04
+    hostname: friend-device
+    networks:
+      ubuntu_secure_net:
+        ipv4_address: 172.28.1.5
+    environment:
+      - NODE_TYPE=Friend
+      - NODE_ARCH=Variable
+      - NODE_ID=5
+      - P2P_PORT=30337
+      - RPC_PORT=9952
+      - SECURITY_POLICY=social_trust
+    volumes:
+      - ./ubuntu-blockchain-node:/app
+      - friend-chain-data:/chain-data
+    ports:
+      - "30337:30337"
+    command: >
+      bash -c "
+      echo '[Ubuntu Secure] Friend device node starting...' &&
+      echo 'Node Role: Social trust validator' &&
+      echo 'Trust Level: 60%' &&
+      echo 'Vote Weight: 1/5' &&
+      /app/ubuntu-secure-node
+        --base-path /chain-data
+        --chain local
+        --node-key 0000000000000000000000000000000000000000000000000000000000000005
+        --port 30337
+        --bootnodes /ip4/172.28.1.1/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp
+        --name 'Friend-Device'
+        --validator
+      "
+
+  # Network Monitor - Shows consensus in real-time
+  network-monitor:
+    container_name: ubuntu-secure-monitor
+    image: ubuntu:24.04
+    hostname: monitor
+    networks:
+      ubuntu_secure_net:
+        ipv4_address: 172.28.1.100
+    environment:
+      - MONITOR_MODE=true
+    volumes:
+      - ./network-monitor:/app
+    depends_on:
+      - laptop-node
+      - phone-node
+      - pi-node
+      - cloud-node
+      - friend-node
+    command: >
+      bash -c "
+      echo '╔══════════════════════════════════════════════════════╗' &&
+      echo '║     Ubuntu Secure: Multi-Node Network Monitor        ║' &&
+      echo '╚══════════════════════════════════════════════════════╝' &&
+      while true; do
+        echo '' &&
+        echo 'Network Status:' &&
+        echo '├─ Laptop (x86): Active - Potentially Compromised' &&
+        echo '├─ Phone (ARM): Active - Security Validator' &&
+        echo '├─ Pi (RISC-V): Active - Conservative Policy' &&
+        echo '├─ Cloud (x86): Active - Policy Based' &&
+        echo '└─ Friend: Active - Social Trust' &&
+        echo '' &&
+        echo 'Consensus: 3/5 nodes required for approval' &&
+        sleep 10
+      done
+      "
+
+networks:
+  ubuntu_secure_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  laptop-chain-data:
+  phone-chain-data:
+  pi-chain-data:
+  cloud-chain-data:
+  friend-chain-data:

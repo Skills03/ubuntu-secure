@@ -1,0 +1,89 @@
+[workspace]
+members = [
+    "node",
+    "pallets/ubuntu-secure",
+    "runtime",
+]
+resolver = "2"
+
+[workspace.package]
+authors = ["Ubuntu Secure Team"]
+edition = "2021"
+repository = "https://github.com/ubuntu-secure/distributed-consensus-os.git"
+license = "MIT"
+
+[workspace.dependencies]
+# Import all necessary dependencies from Polkadot SDK
+codec = { package = "parity-scale-codec", version = "3.6.12", default-features = false, features = ["derive"] }
+scale-info = { version = "2.11", default-features = false, features = ["derive"] }
+clap = { version = "4.5.16" }
+futures = { version = "0.3.30" }
+jsonrpsee = { version = "0.24.3" }
+serde = { version = "1.0.210" }
+serde_json = { version = "1.0.128", default-features = false }
+
+# Substrate/Polkadot SDK dependencies
+frame-benchmarking = { path = "../../../polkadot-sdk/substrate/frame/benchmarking", default-features = false }
+frame-benchmarking-cli = { path = "../../../polkadot-sdk/substrate/utils/frame/benchmarking-cli", default-features = false }
+frame-executive = { path = "../../../polkadot-sdk/substrate/frame/executive", default-features = false }
+frame-metadata-hash-extension = { path = "../../../polkadot-sdk/substrate/frame/metadata-hash-extension", default-features = false }
+frame-support = { path = "../../../polkadot-sdk/substrate/frame/support", default-features = false }
+frame-system = { path = "../../../polkadot-sdk/substrate/frame/system", default-features = false }
+frame-system-benchmarking = { path = "../../../polkadot-sdk/substrate/frame/system/benchmarking", default-features = false }
+frame-system-rpc-runtime-api = { path = "../../../polkadot-sdk/substrate/frame/system/rpc/runtime-api", default-features = false }
+frame-try-runtime = { path = "../../../polkadot-sdk/substrate/frame/try-runtime", default-features = false }
+
+# Pallets
+pallet-aura = { path = "../../../polkadot-sdk/substrate/frame/aura", default-features = false }
+pallet-balances = { path = "../../../polkadot-sdk/substrate/frame/balances", default-features = false }
+pallet-grandpa = { path = "../../../polkadot-sdk/substrate/frame/grandpa", default-features = false }
+pallet-sudo = { path = "../../../polkadot-sdk/substrate/frame/sudo", default-features = false }
+pallet-timestamp = { path = "../../../polkadot-sdk/substrate/frame/timestamp", default-features = false }
+pallet-transaction-payment = { path = "../../../polkadot-sdk/substrate/frame/transaction-payment", default-features = false }
+pallet-transaction-payment-rpc = { path = "../../../polkadot-sdk/substrate/frame/transaction-payment/rpc", default-features = false }
+pallet-transaction-payment-rpc-runtime-api = { path = "../../../polkadot-sdk/substrate/frame/transaction-payment/rpc/runtime-api", default-features = false }
+
+# Ubuntu Secure pallet
+pallet-ubuntu-secure = { path = "pallets/ubuntu-secure", default-features = false }
+
+# Substrate client
+sc-basic-authorship = { path = "../../../polkadot-sdk/substrate/client/basic-authorship" }
+sc-cli = { path = "../../../polkadot-sdk/substrate/client/cli" }
+sc-client-api = { path = "../../../polkadot-sdk/substrate/client/api" }
+sc-consensus = { path = "../../../polkadot-sdk/substrate/client/consensus/common" }
+sc-consensus-aura = { path = "../../../polkadot-sdk/substrate/client/consensus/aura" }
+sc-consensus-grandpa = { path = "../../../polkadot-sdk/substrate/client/consensus/grandpa" }
+sc-executor = { path = "../../../polkadot-sdk/substrate/client/executor" }
+sc-network = { path = "../../../polkadot-sdk/substrate/client/network" }
+sc-offchain = { path = "../../../polkadot-sdk/substrate/client/offchain" }
+sc-service = { path = "../../../polkadot-sdk/substrate/client/service" }
+sc-telemetry = { path = "../../../polkadot-sdk/substrate/client/telemetry" }
+sc-transaction-pool = { path = "../../../polkadot-sdk/substrate/client/transaction-pool" }
+sc-transaction-pool-api = { path = "../../../polkadot-sdk/substrate/client/transaction-pool/api" }
+
+# Substrate primitives
+sp-api = { path = "../../../polkadot-sdk/substrate/primitives/api", default-features = false }
+sp-block-builder = { path = "../../../polkadot-sdk/substrate/primitives/block-builder", default-features = false }
+sp-blockchain = { path = "../../../polkadot-sdk/substrate/primitives/blockchain" }
+sp-consensus-aura = { path = "../../../polkadot-sdk/substrate/primitives/consensus/aura", default-features = false }
+sp-consensus-grandpa = { path = "../../../polkadot-sdk/substrate/primitives/consensus/grandpa", default-features = false }
+sp-core = { path = "../../../polkadot-sdk/substrate/primitives/core", default-features = false }
+sp-genesis-builder = { path = "../../../polkadot-sdk/substrate/primitives/genesis-builder", default-features = false }
+sp-inherents = { path = "../../../polkadot-sdk/substrate/primitives/inherents", default-features = false }
+sp-io = { path = "../../../polkadot-sdk/substrate/primitives/io", default-features = false }
+sp-keyring = { path = "../../../polkadot-sdk/substrate/primitives/keyring" }
+sp-offchain = { path = "../../../polkadot-sdk/substrate/primitives/offchain", default-features = false }
+sp-runtime = { path = "../../../polkadot-sdk/substrate/primitives/runtime", default-features = false }
+sp-session = { path = "../../../polkadot-sdk/substrate/primitives/session", default-features = false }
+sp-storage = { path = "../../../polkadot-sdk/substrate/primitives/storage", default-features = false }
+sp-timestamp = { path = "../../../polkadot-sdk/substrate/primitives/timestamp", default-features = false }
+sp-transaction-pool = { path = "../../../polkadot-sdk/substrate/primitives/transaction-pool", default-features = false }
+sp-version = { path = "../../../polkadot-sdk/substrate/primitives/version", default-features = false }
+
+# Build dependencies
+substrate-build-script-utils = { path = "../../../polkadot-sdk/substrate/utils/build-script-utils" }
+substrate-frame-rpc-system = { path = "../../../polkadot-sdk/substrate/utils/frame/rpc/system" }
+substrate-wasm-builder = { path = "../../../polkadot-sdk/substrate/utils/wasm-builder" }
+
+# Local dependencies
+ubuntu-secure-runtime = { path = "runtime" }

@@ -1,0 +1,14 @@
+[Unit]
+Description=Ubuntu Blockchain OS
+After=network.target
+
+[Service]
+Type=simple
+User=rishabh
+WorkingDirectory=/home/rishabh/Desktop/dev/ubuntu-secure
+ExecStart=/usr/bin/python3 /home/rishabh/Desktop/dev/ubuntu-secure/ubuntu_blockchain_os.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

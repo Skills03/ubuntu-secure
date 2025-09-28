@@ -1,0 +1,44 @@
+version: '3.8'
+
+# Phase 3: Simple 5-node network - following progressive enhancement
+# Just ~50 lines, actually works
+
+services:
+  laptop:
+    image: alpine:latest
+    container_name: ubuntu-secure-laptop
+    command: sh -c "echo 'Laptop node (x86) - Vote weight 1/5' && sleep infinity"
+    networks:
+      - ubuntu-net
+
+  phone:
+    image: alpine:latest
+    container_name: ubuntu-secure-phone
+    command: sh -c "echo 'Phone node (ARM) - Vote weight 1/5' && sleep infinity"
+    networks:
+      - ubuntu-net
+
+  pi:
+    image: alpine:latest
+    container_name: ubuntu-secure-pi
+    command: sh -c "echo 'Pi node (RISC-V) - Vote weight 1/5' && sleep infinity"
+    networks:
+      - ubuntu-net
+
+  cloud:
+    image: alpine:latest
+    container_name: ubuntu-secure-cloud
+    command: sh -c "echo 'Cloud node (x86) - Vote weight 1/5' && sleep infinity"
+    networks:
+      - ubuntu-net
+
+  friend:
+    image: alpine:latest
+    container_name: ubuntu-secure-friend
+    command: sh -c "echo 'Friend node - Vote weight 1/5' && sleep infinity"
+    networks:
+      - ubuntu-net
+
+networks:
+  ubuntu-net:
+    driver: bridge
