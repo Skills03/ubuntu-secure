@@ -1,0 +1,12 @@
+{
+  "name": "Ubuntu Blockchain OS",
+  "description": "Secure, distributed Ubuntu on blockchain",
+  "repository": "https://github.com/ubuntu-secure/blockchain-os",
+  "keywords": ["blockchain", "ubuntu", "security", "distributed"],
+  "stack": "heroku-22",
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ]
+}
