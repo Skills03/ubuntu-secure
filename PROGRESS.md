@@ -26,10 +26,22 @@
 - **Status:** Shows all phases working together
 - **Test:** `python3 test_integrated.py`
 
+### Phase 4: Zero-Knowledge Hardware Attestation ✓
+- **Lines added:** +423 (substrate_zk_attestation.py)
+- **Features:** ZK proofs, Substrate blockchain, privacy-preserving attestation
+- **Status:** Complete, Docker integration with Phase 3 fallback
+- **Test:** `python3 substrate_zk_attestation.py`
+
+### Phase 5: Emergency Revocation System ✓
+- **Lines added:** +315 (substrate_emergency_revocation.py)
+- **Features:** Friend voting, blockchain recording, permanent device disable
+- **Status:** Complete, 2-of-3 friend consensus required
+- **Test:** `python3 substrate_emergency_revocation.py`
+
 ### Documentation ✓
 - **README.md:** 290 lines
 - **PROGRESS.md:** This file
-- **Total Project:** ~1,600 lines (still maintainable!)
+- **Total Project:** ~2,338 lines (still maintainable!)
 
 ## Attack Vectors Defeated
 
@@ -42,6 +54,8 @@
 | Hidden kernel modules | All ops require consensus | 3 |
 | Timestamp manipulation | Distributed time sources | 3 |
 | Key extraction | Threshold cryptography | 1 |
+| Hardware profiling | Zero-knowledge attestation | 4 |
+| Stolen devices | Emergency friend revocation | 5 |
 
 ## Performance Metrics
 
@@ -57,16 +71,10 @@
 3. **Surveillance prevention** ✓
 4. **Timestamp integrity** ✓
 5. **Process transparency** ✓
+6. **Privacy-preserving attestation** ✓
+7. **Social recovery mechanism** ✓
 
 ## Future Phases (TODO)
-
-### Phase 4: Zero-Knowledge Proofs
-- Hardware attestation without revealing details
-- ~400 lines estimated
-
-### Phase 5: Emergency Revocation
-- Friends can brick compromised laptop
-- ~300 lines estimated
 
 ### Phase 6: Homomorphic Encryption
 - Compute on encrypted data
@@ -87,10 +95,12 @@
 
 ```bash
 # Test individual phases
-python3 secure_boot.py phase1    # Threshold crypto
-python3 secure_boot.py            # Distributed boot
-python3 mpc_compute.py            # MPC demo
-python3 test_integrated.py        # Full system
+python3 secure_boot.py phase1              # Phase 1: Threshold crypto
+python3 secure_boot.py                     # Phase 2: Distributed boot
+python3 mpc_compute.py                     # Phase 3: MPC demo
+python3 substrate_zk_attestation.py        # Phase 4: ZK attestation
+python3 substrate_emergency_revocation.py   # Phase 5: Emergency revocation
+python3 test_phase_1_4.py                  # Integration test
 
 # Start device network only
 python3 device_nodes.py
@@ -101,7 +111,7 @@ for f in *.py; do python3 $f; done
 
 ## Conclusion
 
-In 3 phases and ~1,600 lines of code, we've built a system that defeats the sophisticated attacks described in the forensic reports. The key innovation is that security comes from consensus across multiple devices, not from trusting any single piece of hardware.
+In 5 phases and ~2,338 lines of code, we've built a system that defeats the sophisticated attacks described in the forensic reports, adds privacy-preserving attestation, and enables social recovery. The key innovation is that security comes from consensus across multiple devices, not from trusting any single piece of hardware.
 
 The system is:
 - **Working** - Not a prototype
