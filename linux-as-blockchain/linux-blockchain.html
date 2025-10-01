@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Linux AS Blockchain - Real Consensus</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: monospace;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        #header {
+            background: rgba(0,0,0,0.95);
+            color: #4ade80;
+            padding: 15px 20px;
+            border-bottom: 3px solid #4ade80;
+        }
+        h1 { font-size: 24px; text-shadow: 0 0 10px #4ade80; margin-bottom: 8px; }
+        .status {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            background: rgba(74,222,128,0.2);
+            padding: 4px 12px;
+            border-radius: 15px;
+            border: 1px solid #4ade80;
+        }
+        .badge.warning { border-color: #fbbf24; color: #fbbf24; background: rgba(251,191,36,0.2); }
+        #screen-container {
+            flex: 1;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+        }
+        #screen_container { width: 100%; height: 100%; }
+        #screen_container div { color: #fff; }
+        #screen_container canvas { image-rendering: pixelated; width: 100%; height: 100%; }
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #4ade80;
+            font-size: 20px;
+            text-align: center;
+        }
+        #info {
+            background: rgba(0,0,0,0.95);
+            color: white;
+            padding: 10px 20px;
+            border-top: 2px solid #4ade80;
+            font-size: 11px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        .info-item strong { color: #4ade80; }
+        #sync-log {
+            margin-top: 8px;
+            max-height: 60px;
+            overflow-y: auto;
+            font-size: 10px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>🔗 Linux AS Blockchain - Linux Instances Form The Chain</h1>
+        <div class="status">
+            <span class="badge">✅ WASM Linux Kernel</span>
+            <span class="badge" id="blockchain-badge">⏳ Initializing Blockchain...</span>
+            <span class="badge" id="sync-badge">⏳ Mining: Waiting</span>
+            <span class="badge" id="nodes-badge">Nodes: 1</span>
+        </div>
+    </div>
+
+    <div id="screen-container">
+        <div id="loading">
+            🔗 Initializing Linux AS Blockchain Network...<br>
+            <small id="load-status">Booting Linux blockchain node...</small>
+        </div>
+        <div id="screen_container">
+            <div style="white-space: pre; font: 14px monospace; line-height: 14px"></div>
+            <canvas style="display: none"></canvas>
+        </div>
+    </div>
+
+    <div id="info">
+        <div class="info-grid">
+            <div class="info-item">
+                <strong>Mode:</strong> <span id="mode">Linux IS Blockchain</span>
+            </div>
+            <div class="info-item">
+                <strong>Chain:</strong> <span id="blockchain">Proof of Work</span>
+            </div>
+            <div class="info-item">
+                <strong>Latest Block:</strong> <span id="state-root">Genesis...</span>
+            </div>
+            <div class="info-item">
+                <strong>Block Time:</strong> <span id="last-sync">Never</span>
+            </div>
+        </div>
+        <div id="sync-log"></div>
+    </div>
+
+    <!-- v86 Linux emulator - LOCAL -->
+    <script src="./libv86.js"></script>
+
+    <!-- Linux AS Blockchain - Phase 2 -->
+    <script src="./linux-chain.js"></script>
+</body>
+</html>
