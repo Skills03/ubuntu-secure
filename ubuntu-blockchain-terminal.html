@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ubuntu Secure - Blockchain Terminal</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.5.4/dist/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #header {
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px 30px;
+            border-bottom: 3px solid #4ade80;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        #header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #4ade80;
+            text-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+        }
+
+        #blockchain-info {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(74, 222, 128, 0.1);
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(74, 222, 128, 0.3);
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ff3333;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: #4ade80;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        #terminal-container {
+            flex: 1;
+            background: #000;
+            padding: 20px;
+            overflow: hidden;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+        }
+
+        #terminal {
+            width: 100%;
+            height: 100%;
+        }
+
+        #footer {
+            background: rgba(0, 0, 0, 0.9);
+            padding: 12px 30px;
+            border-top: 2px solid #4ade80;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+        }
+
+        .footer-links a {
+            color: #4ade80;
+            text-decoration: none;
+            margin: 0 10px;
+            transition: all 0.3s;
+        }
+
+        .footer-links a:hover {
+            text-shadow: 0 0 10px #4ade80;
+        }
+
+        /* XTerm overrides for Ubuntu Secure theme */
+        .xterm {
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace !important;
+            font-size: 14px !important;
+        }
+
+        .xterm-viewport {
+            background: transparent !important;
+        }
+
+        .xterm-screen {
+            background: rgba(0, 0, 0, 0.8) !important;
+        }
+
+        /* Loading animation */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #4ade80;
+            font-size: 20px;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>🔗 Ubuntu Secure - Blockchain Terminal</h1>
+        <div id="blockchain-info">
+            <div class="info-item">
+                <span class="status-dot" id="status-dot"></span>
+                <span id="status-text">Connecting...</span>
+            </div>
+            <div class="info-item">
+                <span>🔗</span>
+                <span>Westend Testnet</span>
+            </div>
+            <div class="info-item">
+                <span>🔒</span>
+                <span>1000+ Validators</span>
+            </div>
+            <div class="info-item">
+                <span>📦</span>
+                <span id="block-number">Block #27935116</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="terminal-container">
+        <div id="loading" class="loading">Connecting to blockchain terminal</div>
+        <div id="terminal"></div>
+    </div>
+
+    <div id="footer">
+        <div>
+            <strong>Public Blockchain:</strong> wss://westend-rpc.polkadot.io
+        </div>
+        <div class="footer-links">
+            <a href="https://westend.subscan.io/block/27935116" target="_blank">Block Explorer</a>
+            <a href="https://polkadot.js.org/apps/" target="_blank">Polkadot Apps</a>
+            <a href="PUBLIC_BLOCKCHAIN_DEPLOYMENT.md" target="_blank">Documentation</a>
+        </div>
+    </div>
+
+    <script>
+        // Terminal and Socket.IO setup
+        const SERVER_URL = window.location.origin;
+        const socket = io(SERVER_URL);
+
+        // Initialize XTerm
+        const term = new Terminal({
+            cursorBlink: true,
+            fontSize: 14,
+            fontFamily: '"SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace',
+            theme: {
+                background: 'rgba(0, 0, 0, 0.8)',
+                foreground: '#ffffff',
+                cursor: '#4ade80',
+                cursorAccent: '#000000',
+                selection: 'rgba(74, 222, 128, 0.3)',
+                black: '#000000',
+                red: '#ff5555',
+                green: '#4ade80',
+                yellow: '#f1fa8c',
+                blue: '#6272a4',
+                magenta: '#ff79c6',
+                cyan: '#8be9fd',
+                white: '#f8f8f2',
+                brightBlack: '#6272a4',
+                brightRed: '#ff6e6e',
+                brightGreen: '#69ff94',
+                brightYellow: '#ffffa5',
+                brightBlue: '#d6acff',
+                brightMagenta: '#ff92df',
+                brightCyan: '#a4ffff',
+                brightWhite: '#ffffff'
+            },
+            allowProposedApi: true
+        });
+
+        const fitAddon = new FitAddon.FitAddon();
+        term.loadAddon(fitAddon);
+
+        // Socket.IO event handlers
+        socket.on('connect', () => {
+            console.log('Connected to server');
+            updateStatus('Connected', true);
+            document.getElementById('loading').style.display = 'none';
+
+            // Open terminal
+            term.open(document.getElementById('terminal'));
+            fitAddon.fit();
+
+            // Create terminal session
+            socket.emit('create', {
+                cols: term.cols,
+                rows: term.rows
+            });
+        });
+
+        socket.on('created', (data) => {
+            console.log('Terminal created:', data);
+            if (data.block) {
+                document.getElementById('block-number').textContent = `Block #${data.block}`;
+            }
+        });
+
+        socket.on('output', (data) => {
+            term.write(data);
+        });
+
+        socket.on('exit', () => {
+            term.write('\r\n\n[Terminal session ended. Refresh to reconnect]\r\n');
+        });
+
+        socket.on('disconnect', () => {
+            updateStatus('Disconnected', false);
+            term.write('\r\n\n[Connection lost. Please refresh the page]\r\n');
+        });
+
+        socket.on('connect_error', (error) => {
+            console.error('Connection error:', error);
+            updateStatus('Connection failed', false);
+            document.getElementById('loading').textContent = 'Failed to connect to terminal server';
+        });
+
+        // Handle terminal input
+        term.onData((data) => {
+            socket.emit('input', data);
+        });
+
+        // Handle terminal resize
+        term.onResize(({ cols, rows }) => {
+            socket.emit('resize', { cols, rows });
+        });
+
+        // Update status indicator
+        function updateStatus(text, connected) {
+            document.getElementById('status-text').textContent = text;
+            const dot = document.getElementById('status-dot');
+            if (connected) {
+                dot.classList.add('connected');
+            } else {
+                dot.classList.remove('connected');
+            }
+        }
+
+        // Fit terminal on window resize
+        window.addEventListener('resize', () => {
+            fitAddon.fit();
+        });
+
+        // Initial fit
+        setTimeout(() => {
+            fitAddon.fit();
+        }, 100);
+    </script>
+</body>
+</html>
