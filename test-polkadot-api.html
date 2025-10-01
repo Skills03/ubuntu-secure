@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Polkadot API Loading</title>
+    <!-- Load all dependencies in order -->
+    <script src="https://cdn.jsdelivr.net/npm/@polkadot/util@12/bundle-polkadot-util.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@polkadot/util-crypto@12/bundle-polkadot-util-crypto.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@polkadot/types@10/bundle-polkadot-types.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@polkadot/keyring@12/bundle-polkadot-keyring.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@polkadot/api@10/bundle-polkadot-api.js"></script>
+</head>
+<body>
+    <h1>Testing Polkadot API</h1>
+    <pre id="output"></pre>
+
+    <script>
+        const output = document.getElementById('output');
+
+        function log(msg) {
+            output.textContent += msg + '\n';
+            console.log(msg);
+        }
+
+        // Wait for all scripts to load
+        setTimeout(async () => {
+            try {
+                log('Testing Polkadot API...');
+                log('typeof polkadotApi: ' + typeof polkadotApi);
+                log('polkadotApi keys: ' + Object.keys(polkadotApi || {}).join(', '));
+
+                if (polkadotApi && polkadotApi.WsProvider) {
+                    log('✅ WsProvider exists');
+                    log('✅ ApiPromise exists: ' + (polkadotApi.ApiPromise ? 'YES' : 'NO'));
+
+                    // Try to connect
+                    log('Connecting to Westend...');
+                    const provider = new polkadotApi.WsProvider('wss://westend-rpc.polkadot.io');
+                    const api = await polkadotApi.ApiPromise.create({ provider });
+
+                    const chain = await api.rpc.system.chain();
+                    const header = await api.rpc.chain.getHeader();
+
+                    log('✅ Connected to: ' + chain);
+                    log('✅ Block: #' + header.number.toNumber());
+                    log('✅ SUCCESS! Polkadot API works!');
+
+                    await api.disconnect();
+                } else {
+                    log('❌ polkadotApi not available');
+                }
+            } catch (error) {
+                log('❌ Error: ' + error.message);
+                log('Stack: ' + error.stack);
+            }
+        }, 2000); // Wait 2 seconds for scripts to load
+    </script>
+</body>
+</html>

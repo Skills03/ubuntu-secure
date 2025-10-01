@@ -71,11 +71,15 @@
             color: #888;
         }
     </style>
-    <!-- Phase 1: Add Polkadot API -->
-    <script src="https://cdn.jsdelivr.net/npm/@polkadot/api@10/bundle-polkadot-api.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@polkadot/util-crypto@12/bundle-polkadot-util-crypto.js"></script>
-    <!-- Phase 1: Add v86 -->
+    <!-- v86 Linux emulator -->
     <script src="https://cdn.jsdelivr.net/npm/v86@latest/build/libv86.js"></script>
+
+    <!-- Polkadot API - correct loading order from official docs -->
+    <script src="//unpkg.com/@polkadot/util/bundle-polkadot-util.js"></script>
+    <script src="//unpkg.com/@polkadot/util-crypto/bundle-polkadot-util-crypto.js"></script>
+    <script src="//unpkg.com/@polkadot/keyring/bundle-polkadot-keyring.js"></script>
+    <script src="//unpkg.com/@polkadot/types/bundle-polkadot-types.js"></script>
+    <script src="//unpkg.com/@polkadot/api/bundle-polkadot-api.js"></script>
 </head>
 <body>
     <div id="header">
@@ -164,8 +168,14 @@
                     this.log('Connecting to Westend public blockchain...');
                     document.getElementById('load-status').textContent = 'Connecting to Westend...';
 
-                    const provider = new polkadotApi.WsProvider('wss://westend-rpc.polkadot.io');
-                    this.api = await polkadotApi.ApiPromise.create({ provider });
+                    // Check if API loaded (following official docs pattern)
+                    if (typeof polkadotApi === 'undefined') {
+                        throw new Error('Polkadot API not loaded');
+                    }
+
+                    const { ApiPromise, WsProvider } = polkadotApi;
+                    const provider = new WsProvider('wss://westend-rpc.polkadot.io');
+                    this.api = await ApiPromise.create({ provider });
 
                     const chain = await this.api.rpc.system.chain();
                     const header = await this.api.rpc.chain.getHeader();
