@@ -150,14 +150,11 @@
             }
 
             async init() {
-                // Wait for scripts to load
-                await new Promise(resolve => setTimeout(resolve, 3000));
-
-                // Step 1: Connect to Westend
-                await this.connectBlockchain();
-
-                // Step 2: Initialize v86 Linux
+                // Step 1: Initialize v86 Linux first (doesn't need blockchain)
                 await this.initLinux();
+
+                // Step 2: Try blockchain (async, non-blocking)
+                setTimeout(() => this.connectBlockchain(), 5000);
 
                 // Step 3: Start state sync
                 this.startStateSync();
@@ -202,7 +199,7 @@
                 document.getElementById('load-status').textContent = 'Loading Linux kernel...';
 
                 this.emulator = new V86({
-                    wasm_path: "https://cdn.jsdelivr.net/npm/v86@latest/build/v86.wasm",
+                    wasm_path: "https://unpkg.com/v86@latest/build/v86.wasm",
                     memory_size: 64 * 1024 * 1024,  // 64MB for faster state sync
                     vga_memory_size: 4 * 1024 * 1024,
                     screen_container: document.getElementById("screen_container"),
