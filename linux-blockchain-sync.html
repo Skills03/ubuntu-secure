@@ -150,6 +150,9 @@
             }
 
             async init() {
+                // Wait for scripts to load
+                await new Promise(resolve => setTimeout(resolve, 3000));
+
                 // Step 1: Connect to Westend
                 await this.connectBlockchain();
 
