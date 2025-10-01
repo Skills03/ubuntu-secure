@@ -8,7 +8,7 @@ const { ApiPromise, WsProvider, Keyring } = require('@polkadot/api');
 const { cryptoWaitReady } = require('@polkadot/util-crypto');
 
 const WESTEND_RPC = 'wss://westend-rpc.polkadot.io';
-const IPFS_HASH = 'QmUMx8AmRuL6defoVi6FkBfXuKe427khry6cGvLc9eBDRU';
+const IPFS_HASH = 'Qmc13KkB1ULV8VpkrYSbsYbTdBX9ojspomKBRqJBoce82h'; // Linux AS Blockchain
 
 async function storeOnChain() {
     console.log('\n🔗 STORING IPFS HASH ON WESTEND BLOCKCHAIN\n');
@@ -31,13 +31,22 @@ async function storeOnChain() {
         const alice = keyring.addFromUri('//Alice');
 
         const data = JSON.stringify({
-            app: 'Ubuntu Secure',
-            type: 'terminal',
+            app: 'Linux AS Blockchain',
+            version: 'Phase 1',
+            type: 'Distributed OS with State Sync',
             ipfs: IPFS_HASH,
             urls: [
                 `https://ipfs.io/ipfs/${IPFS_HASH}`,
                 `https://cloudflare-ipfs.com/ipfs/${IPFS_HASH}`,
-                `https://dweb.link/ipfs/${IPFS_HASH}`
+                `https://dweb.link/ipfs/${IPFS_HASH}`,
+                `https://gateway.pinata.cloud/ipfs/${IPFS_HASH}`
+            ],
+            features: [
+                'v86 Linux kernel in browser',
+                'State sync via Westend blockchain',
+                'Multi-node consensus detection',
+                'Real-time state hashing',
+                '100% decentralized infrastructure'
             ],
             blockchain: 'Westend',
             timestamp: new Date().toISOString()
