@@ -1,8 +1,9 @@
-// Phase 1: Linux AS Blockchain Implementation
-// Following DEVELOPMENT_METHODOLOGY: Minimum viable product first
+// Phase 1: Linux synced TO Westend blockchain
+// Phase 2: Linux instances form their OWN blockchain (added below)
+// Following DEVELOPMENT_METHODOLOGY: Progressive enhancement
 
-console.log('🔗 LINUX AS BLOCKCHAIN - Phase 1');
-console.log('This is Linux STATE synced via real Westend blockchain');
+console.log('🔗 LINUX AS BLOCKCHAIN - Phase 1+2');
+console.log('Phase 1: Sync to Westend | Phase 2: Local blockchain fallback');
 
 class LinuxBlockchain {
     constructor() {
@@ -240,14 +241,122 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 console.log('');
-console.log('🎯 LINUX AS BLOCKCHAIN - Phase 1 Active');
-console.log('  • v86 Linux running in browser');
-console.log('  • State synced every 10 seconds');
-console.log('  • State root hash stored on Westend (read-only)');
-console.log('  • Open multiple tabs to see consensus simulation');
-console.log('');
-console.log('Phase 2 will add:');
-console.log('  • Actual Westend transaction submission');
-console.log('  • IPFS state storage');
-console.log('  • Multi-browser state restoration');
-console.log('  • Byzantine fault tolerance');
+console.log('🎯 LINUX AS BLOCKCHAIN - Phases 1+2 Active');
+console.log('  Phase 1: Westend sync (if available)');
+console.log('  Phase 2: Local blockchain (fallback)');
+console.log('  • Open multiple tabs to see consensus');
+
+// ============================================================================
+// PHASE 2: Local Blockchain (Progressive Enhancement)
+// ============================================================================
+// Added after Phase 1 - doesn't replace it, extends it
+// Activates automatically if Westend connection fails
+
+class LocalBlock {
+    constructor(index, timestamp, data, previousHash = '') {
+        this.index = index;
+        this.timestamp = timestamp;
+        this.data = data;
+        this.previousHash = previousHash;
+        this.hash = this.calculateHash();
+    }
+
+    calculateHash() {
+        const str = this.index + this.previousHash + this.timestamp + JSON.stringify(this.data);
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = ((hash << 5) - hash) + str.charCodeAt(i);
+            hash = hash & hash;
+        }
+        return '0x' + Math.abs(hash).toString(16).padStart(16, '0');
+    }
+}
+
+class LocalChain {
+    constructor(nodeId) {
+        this.nodeId = nodeId;
+        this.chain = [];
+        this.peers = new Map();
+
+        // Genesis block
+        this.chain.push(new LocalBlock(0, Date.now(), {type: 'genesis', nodeId}, '0'));
+
+        // P2P via BroadcastChannel
+        try {
+            this.channel = new BroadcastChannel('linux_chain');
+            this.channel.onmessage = (e) => this.handlePeerMessage(e.data);
+            this.broadcast({type: 'announce', chainLength: this.chain.length});
+        } catch (e) {
+            console.log('  BroadcastChannel not supported');
+        }
+    }
+
+    addBlock(data) {
+        const latest = this.chain[this.chain.length - 1];
+        const newBlock = new LocalBlock(this.chain.length, Date.now(), data, latest.hash);
+        this.chain.push(newBlock);
+        this.broadcast({type: 'block', block: newBlock});
+        return newBlock;
+    }
+
+    broadcast(msg) {
+        msg.nodeId = this.nodeId;
+        if (this.channel) this.channel.postMessage(msg);
+    }
+
+    handlePeerMessage(msg) {
+        if (msg.nodeId === this.nodeId) return;
+
+        if (msg.type === 'announce') {
+            this.peers.set(msg.nodeId, {chainLength: msg.chainLength, lastSeen: Date.now()});
+        } else if (msg.type === 'block' && msg.block.index === this.chain.length) {
+            // Simple consensus: accept blocks in order
+            this.chain.push(msg.block);
+        }
+    }
+}
+
+// Phase 2 enhancement: Add fallback blockchain to existing class
+LinuxBlockchain.prototype.initLocalBlockchain = function() {
+    this.log('📦 Westend unavailable - starting local blockchain');
+    this.localChain = new LocalChain(this.nodeId);
+    document.getElementById('blockchain-badge').textContent = '✅ Local Chain';
+    document.getElementById('blockchain').textContent = `Local (${this.localChain.chain.length} blocks)`;
+};
+
+// Phase 2 enhancement: Extend syncStateToBlockchain to use local chain
+const originalSync = LinuxBlockchain.prototype.syncStateToBlockchain;
+LinuxBlockchain.prototype.syncStateToBlockchain = async function() {
+    // Phase 1: Try Westend sync
+    await originalSync.call(this);
+
+    // Phase 2: If no Westend API, use local blockchain
+    if (!this.api && this.localChain) {
+        const state = await this.captureState();
+        if (state && state.hash !== this.lastStateHash) {
+            this.lastStateHash = state.hash;
+            const block = this.localChain.addBlock({
+                type: 'vm_state',
+                stateHash: state.hash,
+                size: state.size
+            });
+            this.log(`📦 Block #${block.index} added: ${block.hash.substr(0, 12)}...`);
+            document.getElementById('blockchain').textContent = `Local (${this.localChain.chain.length} blocks)`;
+            document.getElementById('nodes-badge').textContent = `Nodes: ${this.localChain.peers.size + 1}`;
+        }
+    }
+};
+
+// Phase 2 enhancement: Extend connectBlockchain to initialize local chain on failure
+const originalConnect = LinuxBlockchain.prototype.connectBlockchain;
+LinuxBlockchain.prototype.connectBlockchain = async function() {
+    // Phase 1: Try Westend
+    const connected = await originalConnect.call(this);
+
+    // Phase 2: Fallback to local blockchain
+    if (!connected) {
+        this.initLocalBlockchain();
+    }
+
+    return connected;
+};
