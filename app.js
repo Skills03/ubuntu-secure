@@ -2,8 +2,8 @@
 // Phase 2: Linux instances form their OWN blockchain (added below)
 // Following DEVELOPMENT_METHODOLOGY: Progressive enhancement
 
-console.log('🔗 LINUX AS BLOCKCHAIN - Phase 1+2');
-console.log('Phase 1: Sync to Westend | Phase 2: Local blockchain fallback');
+console.log('🔗 LINUX AS BLOCKCHAIN - Phases 1+2+3');
+console.log('Phase 1: Read Westend | Phase 2: Local chain | Phase 3: Write to Westend');
 
 class LinuxBlockchain {
     constructor() {
@@ -163,14 +163,44 @@ class LinuxBlockchain {
                 const header = await this.api.rpc.chain.getHeader();
                 const blockNum = header.number.toNumber();
 
-                // Log to console (Phase 2 will submit actual transaction)
-                this.log(`Would submit to Westend #${blockNum}: ${state.hash.substr(0, 12)}...`);
+                // Phase 3: Submit to Westend blockchain (if keyring available)
+                await this.submitToWestend(state, blockNum);
 
                 // Phase 1: Announce state to other nodes via localStorage (simulation)
                 this.announceState(state);
             } catch (error) {
                 this.log(`Blockchain sync error: ${error.message}`);
             }
+        }
+    }
+
+    // Phase 3: Submit Linux state to Westend blockchain
+    async submitToWestend(state, blockNum) {
+        try {
+            // Generate ephemeral keypair if not exists
+            if (!this.keyring) {
+                const { Keyring } = polkadotKeyring;
+                this.keyring = new Keyring({ type: 'sr25519' });
+                // Generate from node ID (same key per session)
+                this.account = this.keyring.addFromUri('//' + this.nodeId);
+                this.log(`🔑 Account: ${this.account.address.substr(0, 8)}...`);
+            }
+
+            // Submit system.remark with state hash (free on Westend)
+            const remark = `Linux state: ${state.hash}`;
+            const tx = this.api.tx.system.remark(remark);
+
+            // Sign and send
+            await tx.signAndSend(this.account, ({ status }) => {
+                if (status.isInBlock) {
+                    this.log(`📝 State on Westend block: ${status.asInBlock.toString().substr(0, 12)}...`);
+                }
+            });
+
+            this.log(`✅ Submitted to Westend #${blockNum}`);
+        } catch (error) {
+            // Phase 3 fails gracefully - Phase 1/2 still work
+            this.log(`⚠️ Westend submit failed: ${error.message}`);
         }
     }
 
@@ -241,9 +271,11 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 console.log('');
-console.log('🎯 LINUX AS BLOCKCHAIN - Phases 1+2 Active');
-console.log('  Phase 1: Westend sync (if available)');
-console.log('  Phase 2: Local blockchain (fallback)');
+console.log('🎯 LINUX AS BLOCKCHAIN - Phases 1+2+3 Active');
+console.log('  Phase 1: Read from Westend');
+console.log('  Phase 2: Local blockchain fallback');
+console.log('  Phase 3: Write Linux state TO Westend');
+console.log('  • Linux state stored ON real blockchain!');
 console.log('  • Open multiple tabs to see consensus');
 
 // ============================================================================
