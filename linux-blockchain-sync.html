@@ -72,7 +72,7 @@
         }
     </style>
     <!-- v86 Linux emulator - stable version -->
-    <script src="https://cdn.jsdelivr.net/npm/v86@10.7.0/build/libv86.js"></script>
+    <script src="https://unpkg.com/v86@0.5.262/build/libv86.js"></script>
 
     <!-- Polkadot API - all v10.9.1 for compatibility -->
     <script src="https://unpkg.com/@polkadot/util@10.4.2/bundle-polkadot-util.js"></script>
@@ -98,7 +98,8 @@
             <small id="load-status">Connecting to Westend validators...</small>
         </div>
         <div id="screen_container">
-            <canvas id="screen"></canvas>
+            <div style="white-space: pre; font: 14px monospace; line-height: 14px"></div>
+            <canvas style="display: none"></canvas>
         </div>
     </div>
 
@@ -123,9 +124,6 @@
     <script>
         // Phase 1: Linux AS Blockchain Implementation
         // Following DEVELOPMENT_METHODOLOGY: Minimum viable product first
-
-        console.log('🔗 LINUX AS BLOCKCHAIN - Phase 1');
-        console.log('This is Linux STATE synced via real Westend blockchain');
 
         class LinuxBlockchain {
             constructor() {
@@ -198,19 +196,24 @@
                 this.log('Booting Linux kernel (v86 WASM)...');
                 document.getElementById('load-status').textContent = 'Loading Linux kernel...';
 
+                const container = document.getElementById("screen_container");
+                if (!container) {
+                    throw new Error("screen_container element not found");
+                }
+
                 this.emulator = new V86({
-                    wasm_path: "https://cdn.jsdelivr.net/npm/v86@10.7.0/build/v86.wasm",
+                    wasm_path: "https://unpkg.com/v86@0.5.262/build/v86.wasm",
                     memory_size: 64 * 1024 * 1024,  // 64MB for faster state sync
                     vga_memory_size: 4 * 1024 * 1024,
-                    screen_container: document.getElementById("screen_container"),
+                    screen_container: container,
                     bios: {
-                        url: "https://cdn.jsdelivr.net/npm/v86@10.7.0/bios/seabios.bin",
+                        url: "https://copy.sh/v86/bios/seabios.bin",
                     },
                     vga_bios: {
-                        url: "https://cdn.jsdelivr.net/npm/v86@10.7.0/bios/vgabios.bin",
+                        url: "https://copy.sh/v86/bios/vgabios.bin",
                     },
                     cdrom: {
-                        url: "https://cdn.jsdelivr.net/npm/v86@10.7.0/images/linux.iso",
+                        url: "https://copy.sh/v86/images/linux.iso",
                     },
                     autostart: true,
                 });
@@ -338,19 +341,24 @@
             }
         }
 
-        // Initialize Linux Blockchain
-        const linuxBlockchain = new LinuxBlockchain();
-        linuxBlockchain.init().catch(error => {
-            console.error('Initialization error:', error);
-            document.getElementById('blockchain-badge').textContent = '❌ Init Failed';
-        });
+        // Wait for DOM before initializing
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, checking elements...');
+            console.log('screen_container:', document.getElementById('screen_container'));
 
-        // Keyboard focus helper
-        window.onclick = function() {
-            if (linuxBlockchain.emulator) {
-                linuxBlockchain.emulator.keyboard_send_scancodes([0x1C]);
-            }
-        };
+            const linuxBlockchain = new LinuxBlockchain();
+            linuxBlockchain.init().catch(error => {
+                console.error('Initialization error:', error);
+                document.getElementById('blockchain-badge').textContent = '❌ Init Failed';
+            });
+
+            // Keyboard focus helper
+            window.onclick = function() {
+                if (linuxBlockchain.emulator) {
+                    linuxBlockchain.emulator.keyboard_send_scancodes([0x1C]);
+                }
+            };
+        });
 
         console.log('');
         console.log('🎯 LINUX AS BLOCKCHAIN - Phase 1 Active');
