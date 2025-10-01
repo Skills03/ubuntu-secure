@@ -71,15 +71,15 @@
             color: #888;
         }
     </style>
-    <!-- v86 Linux emulator -->
-    <script src="https://cdn.jsdelivr.net/npm/v86@latest/build/libv86.js"></script>
+    <!-- v86 Linux emulator - stable version -->
+    <script src="https://cdn.jsdelivr.net/npm/v86@10.7.0/build/libv86.js"></script>
 
-    <!-- Polkadot API - correct loading order from official docs -->
-    <script src="//unpkg.com/@polkadot/util/bundle-polkadot-util.js"></script>
-    <script src="//unpkg.com/@polkadot/util-crypto/bundle-polkadot-util-crypto.js"></script>
-    <script src="//unpkg.com/@polkadot/keyring/bundle-polkadot-keyring.js"></script>
-    <script src="//unpkg.com/@polkadot/types/bundle-polkadot-types.js"></script>
-    <script src="//unpkg.com/@polkadot/api/bundle-polkadot-api.js"></script>
+    <!-- Polkadot API - all v10.9.1 for compatibility -->
+    <script src="https://unpkg.com/@polkadot/util@10.4.2/bundle-polkadot-util.js"></script>
+    <script src="https://unpkg.com/@polkadot/util-crypto@10.4.2/bundle-polkadot-util-crypto.js"></script>
+    <script src="https://unpkg.com/@polkadot/keyring@10.4.2/bundle-polkadot-keyring.js"></script>
+    <script src="https://unpkg.com/@polkadot/types@10.9.1/bundle-polkadot-types.js"></script>
+    <script src="https://unpkg.com/@polkadot/api@10.9.1/bundle-polkadot-api.js"></script>
 </head>
 <body>
     <div id="header">
@@ -199,18 +199,18 @@
                 document.getElementById('load-status').textContent = 'Loading Linux kernel...';
 
                 this.emulator = new V86({
-                    wasm_path: "https://unpkg.com/v86@latest/build/v86.wasm",
+                    wasm_path: "https://cdn.jsdelivr.net/npm/v86@10.7.0/build/v86.wasm",
                     memory_size: 64 * 1024 * 1024,  // 64MB for faster state sync
                     vga_memory_size: 4 * 1024 * 1024,
                     screen_container: document.getElementById("screen_container"),
                     bios: {
-                        url: "https://cdn.jsdelivr.net/npm/v86@latest/bios/seabios.bin",
+                        url: "https://cdn.jsdelivr.net/npm/v86@10.7.0/bios/seabios.bin",
                     },
                     vga_bios: {
-                        url: "https://cdn.jsdelivr.net/npm/v86@latest/bios/vgabios.bin",
+                        url: "https://cdn.jsdelivr.net/npm/v86@10.7.0/bios/vgabios.bin",
                     },
                     cdrom: {
-                        url: "https://cdn.jsdelivr.net/npm/v86@latest/images/linux.iso",
+                        url: "https://cdn.jsdelivr.net/npm/v86@10.7.0/images/linux.iso",
                     },
                     autostart: true,
                 });
