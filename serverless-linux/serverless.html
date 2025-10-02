@@ -94,22 +94,22 @@
     <div id="header">
         <h1>💰 Serverless Linux - Pay Per Use</h1>
         <div class="controls">
-            <button id="saveBtn" disabled>💾 Save State to IPFS</button>
-            <button id="resumeBtn">▶️ Resume from IPFS</button>
-            <button id="stopBtn" disabled>⏹️ Stop (Save & Pause)</button>
+            <button id="bootBtn">▶️ Boot Fresh</button>
+            <button id="resumeBtn">📦 Resume</button>
+            <button id="saveBtn" disabled>💾 Save</button>
+            <button id="stopBtn" disabled>⏹️ Stop</button>
         </div>
         <div class="status">
             <span class="badge" id="state-badge">⏳ Not Running</span>
             <span class="badge" id="runtime-badge">Runtime: 0s</span>
             <span class="badge" id="cost-badge">Cost: $0.00</span>
-            <span class="badge" id="ipfs-badge">IPFS: None</span>
         </div>
     </div>
 
     <div id="screen-container">
         <div id="loading">
-            💰 Serverless Linux - Start when needed, stop when done<br>
-            <small id="load-status">Click Resume or Save will boot Linux</small>
+            💰 Serverless Linux - Pay only when running<br>
+            <small id="load-status">Click Boot to start</small>
         </div>
         <div id="screen_container">
             <div style="white-space: pre; font: 14px monospace; line-height: 14px"></div>
@@ -123,15 +123,13 @@
                 <strong>Model:</strong> <span id="model">Serverless ($0.0001/sec)</span>
             </div>
             <div class="info-item">
-                <strong>State CID:</strong> <span id="cid">Not saved</span>
-            </div>
-            <div class="info-item">
                 <strong>Total Runtime:</strong> <span id="total-runtime">0 seconds</span>
             </div>
             <div class="info-item">
                 <strong>Savings:</strong> <span id="savings">vs Always-on: $0</span>
             </div>
         </div>
+
         <div id="log"></div>
     </div>
 
