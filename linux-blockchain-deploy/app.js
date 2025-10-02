@@ -2,8 +2,8 @@
 // Phase 2: Linux instances form their OWN blockchain (added below)
 // Following DEVELOPMENT_METHODOLOGY: Progressive enhancement
 
-console.log('🔗 LINUX AS BLOCKCHAIN - Phases 1+2+3');
-console.log('Phase 1: Read Westend | Phase 2: Local chain | Phase 3: Write to Westend');
+console.log('🔗 LINUX AS BLOCKCHAIN - Phases 1+2+3+4');
+console.log('Phase 1: Read | Phase 2: Local | Phase 3: Write | Phase 4: Auto-fund');
 
 class LinuxBlockchain {
     constructor() {
@@ -184,6 +184,9 @@ class LinuxBlockchain {
                 // Generate from node ID (same key per session)
                 this.account = this.keyring.addFromUri('//' + this.nodeId);
                 this.log(`🔑 Account: ${this.account.address.substr(0, 8)}...`);
+
+                // Phase 4: Auto-fund from faucet
+                await this.requestFaucet();
             }
 
             // Submit system.remark with state hash (free on Westend)
@@ -201,6 +204,45 @@ class LinuxBlockchain {
         } catch (error) {
             // Phase 3 fails gracefully - Phase 1/2 still work
             this.log(`⚠️ Westend submit failed: ${error.message}`);
+        }
+    }
+
+    // Phase 4: Request WND tokens from Westend faucet
+    async requestFaucet() {
+        try {
+            this.log('💧 Requesting WND from faucet...');
+
+            // Westend faucet endpoints (public testnet faucets)
+            const faucets = [
+                'https://faucet.polkadot.io/drip',
+                'https://westend-faucet.stakeworld.io/drip'
+            ];
+
+            for (const faucetUrl of faucets) {
+                try {
+                    const response = await fetch(faucetUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            address: this.account.address,
+                            amount: 1 // 1 WND
+                        })
+                    });
+
+                    if (response.ok) {
+                        this.log('✅ Faucet: 1 WND received');
+                        // Wait for balance to update
+                        await new Promise(resolve => setTimeout(resolve, 3000));
+                        return;
+                    }
+                } catch (e) {
+                    // Try next faucet
+                }
+            }
+
+            this.log('⚠️ Faucet unavailable - transactions will fail');
+        } catch (error) {
+            this.log(`⚠️ Faucet error: ${error.message}`);
         }
     }
 
@@ -271,11 +313,13 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 console.log('');
-console.log('🎯 LINUX AS BLOCKCHAIN - Phases 1+2+3 Active');
+console.log('🎯 LINUX AS BLOCKCHAIN - Phases 1-4 Active');
 console.log('  Phase 1: Read from Westend');
 console.log('  Phase 2: Local blockchain fallback');
 console.log('  Phase 3: Write Linux state TO Westend');
+console.log('  Phase 4: Auto-fund keypair from faucet');
 console.log('  • Linux state stored ON real blockchain!');
+console.log('  • Automatic WND token funding');
 console.log('  • Open multiple tabs to see consensus');
 
 // ============================================================================
